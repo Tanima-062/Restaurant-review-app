@@ -1,0 +1,51 @@
+.loader {
+    align-items: center;
+    background: #fff;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 999;
+    &::after {
+      animation: loader 0.5s linear infinite;
+      border: 1px solid orange;
+      border-radius: 50%;
+      border-right: 1px solid rgba(orange, 0.2);
+      border-top: 1px solid rgba(orange, 0.2);
+      content: "";
+      height: 70px;
+      width: 70px;
+    }
+  }
+  
+  @keyframes loader {
+    0% {
+      transform: rotate(0);
+    }
+  
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  }
+  
+  main{
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 25px;
+    h1{
+      font-size: 32px;
+      font-weight: bold;
+    }
+    p{
+      font-size: 16px;
+      margin-top: 30px;
+    }
+  }

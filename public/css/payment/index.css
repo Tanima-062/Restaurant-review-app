@@ -1,0 +1,16 @@
+div.from-to {
+    margin:0px 6px 0px 0px;
+}
+
+th.payment-title {
+    text-align: center;
+    border:1px solid black!important;
+}
+
+th.payment-subtitle {
+    border:1px solid black!important;
+}
+
+button.action {
+    margin:2px 3px;
+}

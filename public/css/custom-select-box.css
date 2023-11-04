@@ -1,0 +1,21 @@
+/* 基本のセレクトボックスのカスタマイズ for iOS */
+.item-list-sp select::-ms-expand {
+    display: none;
+}
+.item-list-sp select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin-bottom: 20px;
+    padding: 7px 30px 7px 10px;
+    font-size: 93%;
+    line-height: 1.1em;
+    border-radius: 5px;
+    border: none !important;
+    background-image: url('/images/chevron-down-solid.svg');
+    background-repeat: no-repeat;
+    background-size: 12px 10px;
+    background-position: right 10px center;
+    background-color: #fff !important;
+    box-shadow: 0 1px 0 #d4dae3 !important;
+}

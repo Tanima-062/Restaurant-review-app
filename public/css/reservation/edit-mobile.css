@@ -1,0 +1,23 @@
+span.paymentStatus{
+    margin-right : 20px;
+}
+table.reserver th{
+    width:10px;
+}
+.reserver{
+    flex: 0 0 auto;
+    max-width: 100%;
+}
+textarea.reserverFirstName{
+    height:100px;
+}
+textarea.reserverLastName{
+    height:100px;
+}
+textarea.reserverTel{
+    height:40px;
+}
+textarea.reserverEmail{
+    height:140px;
+}
+

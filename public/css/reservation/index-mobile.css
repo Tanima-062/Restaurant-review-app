@@ -1,0 +1,22 @@
+table.reservationList {
+    display: block;
+    overflow-x: scroll;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+table.reservationList td, table.reservationList th{
+    padding:3px;
+    text-align: center!important;
+}
+
+.list-content {
+    padding: 20px 0px 1px;
+}
+
+.reservationListRow{
+    background-color: #ffffd6;
+}
+
+.reservationListPager{
+    overflow-x : scroll ;
+}

@@ -1,0 +1,4025 @@
+openapi: 3.0.0
+info:
+  title: gourmet-api
+  version: '1.0'
+  termsOfService: 'https://skyticket/gourmet'
+  contact:
+    name: Yuta Kobayashi
+    url: 'https://github.com/Adventureinc/gourmet'
+    email: y-kobayashi@adventure-inc.co.jp
+  description: skyticketグルメサイトのAPI。レストランとテイクアウトサービスを提供。
+servers:
+  - url: 'http://localhost:80'
+    description: ローカル環境
+  - url: 'https://jp.skyticket.jp'
+    description: 開発環境
+  - url: 'https://test.skyticket.jp'
+    description: ステージング環境
+  - url: 'https://skyticket.jp'
+    description: 本番環境
+tags:
+  - name: takeout
+    description: Everything about takeout
+  - name: restaurant
+    description: Everything about restaurant
+  - name: favorite
+    description: favorite
+  - name: store
+    description: Store info
+  - name: auth
+    description: Authentication
+  - name: dish-up
+    description: dish-up
+  - name: util
+    description: util
+paths:
+  '/gourmet/v1/{langCd}/takeout/search':
+    get:
+      summary: テイクアウト-メニュー一覧取得
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  searchResult:
+                    type: object
+                    required:
+                      - genres
+                      - menus
+                      - sumCount
+                      - page
+                    properties:
+                      genres:
+                        type: array
+                        description: ジャンル一覧。メニューが存在するものだけ。
+                        items:
+                          $ref: '#/components/schemas/TakeoutGenre'
+                      menus:
+                        type: array
+                        description: メニュー一覧
+                        items:
+                          $ref: '#/components/schemas/TakeoutMenuThumb'
+                      sumCount:
+                        type: integer
+                        format: int64
+                        default: 0
+                        minimum: 0
+                        maximum: 99999999
+                        description: 検索結果の合計数
+                      page:
+                        type: integer
+                        description: nページ目
+                        minimum: 1
+                      pageMax:
+                        type: integer
+                        description: ページ最大値
+                required:
+                  - searchResult
+        '204':
+          description: No Content
+      operationId: get-gourment-tekeout-search
+      description: テイクアウトメニュー一覧を検索取得する。ジャンルで絞り込める。pageで「もっと見る」。パラメータがないときはレコメンド一覧を取得。
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: cookingGenreCd
+          description: ジャンルコード(料理ジャンル)
+        - schema:
+            type: string
+          in: query
+          name: menuGenreCd
+          description: ジャンルコード(メニュージャンル)
+        - schema:
+            type: string
+          in: query
+          name: suggestCd
+          description: サジェストコード
+        - schema:
+            type: string
+          in: query
+          name: suggestText
+          description: サジェスト内容
+        - schema:
+            type: string
+          in: query
+          name: pickUpDate
+          description: 受取日(yyyy-mm-dd)
+        - schema:
+            type: string
+          in: query
+          name: pickUpTime
+          description: '受取時間(H:i)'
+        - schema:
+            type: integer
+          in: query
+          name: page
+          description: 取得ページ
+        - schema:
+            type: number
+            format: double
+          in: query
+          name: latitude
+          description: 緯度
+        - schema:
+            type: number
+            format: double
+          in: query
+          name: longitude
+          description: 経度
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+  '/gourmet/v1/{langCd}/takeout/notice':
+    get:
+      summary: テイクアウト-お知らせ
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notices:
+                    type: array
+                    description: お知らせ一覧
+                    items:
+                      $ref: '#/components/schemas/TakoutNotice'
+                required:
+                  - notices
+        '204':
+          description: No Content
+      operationId: get-v1-lang_cd-gourme-takeout-topt
+      description: テイクアウトのお知らせ一覧を取得する。
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+  '/gourmet/v1/{langCd}/favorite':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: お気に入り一覧取得
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  takeoutMenus:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TakeoutMenuThumb'
+                  restaurantStores:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RestaurantStore'
+        '204':
+          description: No Content
+      operationId: get-v1-lang_cd-gourmet-favarit
+      description: レストラン、テイクアウト両方のお気に入り一覧を取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: pickUpDate
+          description: 受取日(yyyy-mm-dd)
+        - schema:
+            type: string
+          in: query
+          name: pickUpTime
+          description: '受取時間(H:i)'
+        - schema:
+            type: integer
+          in: query
+          name: visitPeople
+          description: 人数(レストラン)
+        - schema:
+            type: string
+          in: query
+          name: menuIds
+          description: 'メニューidのリストmenuIds=1,2,3,4,5という形式で'
+        - schema:
+            type: string
+          in: query
+          name: storeIds
+          description: 店舗idのリスト
+        - schema:
+            type: string
+          in: query
+          name: appCd
+          description: サービスコード
+        - schema:
+            type: boolean
+          in: query
+          name: dateUndecided
+          description: '日付未定 true:日付未定である, false:日付未定ではない'
+      tags:
+        - favorite
+  '/gourmet/v1/{langCd}/favorite/register':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: 指定したidでお気に入りを登録(会員)
+      operationId: post-v1-lang_cd-gourmet-favorite-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 登録成功(true)/登録失敗(false)
+                  message:
+                    type: string
+                    description: エラーメッセージ
+      description: 指定したidでお気に入りを登録する(会員限定)。非会員はブラウザに保持されている。
+      tags:
+        - favorite
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: お気に入りid
+                appCd:
+                  type: string
+                  description: 利用コード
+              required:
+                - id
+  '/gourmet/v1/{langCd}/favorite/delete':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: 指定したidでお気に入りを削除(会員)
+      operationId: post-v1-langCd-gourmet-favorite-delete-id
+      responses:
+        '200':
+          description: OK
+      description: 指定したidでお気に入りを削除する(会員限定)。非会員はブラウザに保持されている
+      tags:
+        - favorite
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: お気に入りid
+                appCd:
+                  type: string
+                  description: 利用コード
+              required:
+                - id
+  '/gourmet/v1/{langCd}/store/{id}':
+    parameters:
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: 1店舗の情報を取得する
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+        '204':
+          description: No Content
+      operationId: get-v1-lang_cd-gourmet-menu-id
+      tags:
+        - store
+      description: 店舗idから該当する店舗情報を取得する
+  '/gourmet/v1/{langCd}/auth/login':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: ログイン確認
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: number
+                    description: ユーザid
+                  email:
+                    type: string
+                    description: メールアドレス
+                  tel:
+                    type: string
+                    description: 電話番号
+                  lastName:
+                    type: string
+                    description: 姓
+                  firstName:
+                    type: string
+                    description: 名
+                  birthDate:
+                    type: array
+                    description: 生年月日
+                    items:
+                      type: string
+                  gender:
+                    type: string
+                    description: 性別
+                  unreadCnt:
+                    type: number
+                    description: 未読メール数
+        '401':
+          description: Unauthorized
+      operationId: get-v1-lang_cd-auth-login
+      tags:
+        - auth
+      description: ログイン確認する
+      parameters:
+        - schema:
+            type: string
+            example: Bearer 8fb3cfd7947da8bce0f49453da7fd79a866fb4d2e3a1f05266833f819682a51c
+          in: header
+          name: Authorization
+          description: 認証トークン
+    post:
+      summary: ログイン処理
+      operationId: post-v1-lang_cd-auth-login
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: number
+                    description: ユーザid
+                  email:
+                    type: string
+                    description: メールアドレス
+                  tel:
+                    type: string
+                    description: 電話番号
+                  lastName:
+                    type: string
+                    description: 姓
+                  firstName:
+                    type: string
+                    description: 名
+                  birthDate:
+                    type: array
+                    description: 生年月日
+                    items:
+                      type: string
+                  gender:
+                    type: string
+                    description: 性別
+                  unreadCnt:
+                    type: number
+                    description: 未読メール数
+                  apiToken:
+                    type: string
+                    description: '認証トークン:ヘッダにつけるよう'
+          headers: {}
+      description: idとpasswordでログインする
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loginId:
+                  type: string
+                  description: ユーザのlogin id
+                password:
+                  type: string
+                  description: ユーザのpassword
+              required:
+                - loginId
+                - password
+      tags:
+        - auth
+  '/gourmet/v1/{langCd}/auth/logout':
+    post:
+      summary: ログアウトする(要らなくなったはず)
+      operationId: post-v1-lang_cd-auth-logout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+      tags:
+        - auth
+      description: スカイチケットからログアウトする
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+  '/gourmet/v1/{langCd}/takeout/reservation/save':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: テイクアウト-予約申し込み事前処理
+      operationId: post-v1-lang_cd-gourmet-takeout-reservation-save
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionToken:
+                    type: string
+                    description: CSRFトークン
+                  paymentUrl:
+                    type: string
+                    description: 支払い先Url
+                  requestId:
+                    type: string
+                    description: 決済用(econ専用)
+                  result:
+                    type: object
+                    description: 結果
+                    properties:
+                      status:
+                        type: boolean
+                        description: 結果ステータス(true/false)
+                      message:
+                        type: string
+                        description: 結果メッセージ
+      tags:
+        - takeout
+      description: |-
+        決済APIへ処理を移譲するため(PSIDSSの関係で画面遷移する)、予約に必要な情報はサーバに保持する
+        また、決済用に申込の空情報を作成し、決済を進めるためのトークンを発行する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer:
+                  $ref: '#/components/schemas/Customer'
+                application:
+                  $ref: '#/components/schemas/Application'
+                payment:
+                  $ref: '#/components/schemas/PaymentRequest'
+                adCd:
+                  type: string
+                  description: 広告コード
+  '/gourmet/v1/{langCd}/takeout/reservation/complete':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: テイクアウト-予約完了
+      operationId: post-v1-lang_cd-gourmet-takeout-reservation-complete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 予約結果
+                  message:
+                    type: string
+                    description: メッセージ
+                  loginForm:
+                    $ref: '#/components/schemas/loginForm'
+                required:
+                  - status
+                  - message
+      description: 予約処理を確定・完了する
+      tags:
+        - takeout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionToken:
+                  type: string
+                  description: CSRFトークン
+                cd3secResFlg:
+                  type: integer
+                  description: econ専用の処理結果
+              required:
+                - sessionToken
+        description: ''
+  '/gourmet/v1/{langCd}/reservation':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: マイページ(予約確認)情報取得
+      operationId: post-v1-lang_cd-gourmet-reservation
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 取得出来たか否か
+                  message:
+                    type: string
+                    description: OK or Error Message
+                  reservation:
+                    $ref: '#/components/schemas/Reservation'
+                required:
+                  - status
+                  - message
+        '401':
+          description: Unauthorized
+      description: マイページ(予約確認)情報取得
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/loginForm'
+        description: ''
+      tags:
+        - auth
+  '/gourmet/v1/{langCd}/takeout/genre/{genreCd}':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: string
+        name: genreCd
+        in: path
+        description: ジャンルコード
+        required: true
+    get:
+      summary: テイクアウト-ジャンル一覧取得
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  genres:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TakeoutGenre'
+        '204':
+          description: No Content
+      operationId: get-v1-langCd-gourmet-akeout-jonre
+      description: |-
+        SEO用指定した階層のジャンル一覧を取得する
+        より下位の一覧まで取得する場合はlowerLevelを指定する
+        ※サーバ側でツリー構造にするかクライアント側でするかはやってみて再度検討してもいいかもです
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: lowerLevel
+          description: 取得する階層の下限(1だと1階層下まで、2だと2階層下まで)
+  '/gourmet/v1/{langCd}/takeout/menu/{id}':
+    get:
+      summary: メニュー詳細
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TakeoutMenu'
+        '204':
+          description: No Content
+      operationId: get-v1-langCd-gourmet-takeout-menu
+      description: メニューidから詳細を取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: pickUpDate
+          description: 受取日(yyyy-mm-dd)
+        - schema:
+            type: string
+          in: query
+          name: pickUpTime
+          description: '受取時間(H:i)'
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: メニューid
+  '/gourmet/v1/{langCd}/dish-up/login':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: デシャップ画面のログイン確認
+      tags:
+        - dish-up
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '401':
+          description: Unauthorized
+      operationId: get-v1-langCd-gourmet-dish-up-login
+      description: デシャップ画面にログインしているか確認する
+    post:
+      summary: デシャップ画面にログインする
+      operationId: post-v1-langCd-gourmet-dish-up-login
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '401':
+          description: Unauthorized
+      tags:
+        - dish-up
+      description: デシャップ画面にログインする
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userName:
+                  type: string
+                  description: ログインid
+                password:
+                  type: string
+                  description: ユーザパスワード
+                isRemember:
+                  type: boolean
+                  description: 次回から自動的にログイン
+                rememberToken:
+                  type: string
+                  description: 次回から自動的にログイン用のtoken
+        description: ''
+  '/gourmet/v1/{langCd}/dish-up/logout':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: デシャップ画面からログアウトする
+      operationId: post-v1-langCd-gourmet-dish-up-logout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+        '401':
+          description: Unauthorized
+      tags:
+        - dish-up
+      description: デシャップ画面からログアウトする
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userName:
+                  type: string
+                  description: ログインid
+              required:
+                - userName
+  '/gourmet/v1/{langCd}/dish-up/list':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: 注文一覧取得
+      tags:
+        - dish-up
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DishUpReserve'
+        '204':
+          description: No Content
+      operationId: get-v1-langCd-gourmet-dish-up-llist
+      description: 指定した日付の注文一覧を取得する
+      parameters:
+        - schema:
+            type: string
+            format: date
+          in: query
+          name: reservationDate
+          description: 注文(予約)日
+          required: true
+  '/gourmet/v1/{langCd}/dish-up/startCooking':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: 注文を受ける(調理開始)
+      operationId: post-v1-langCd-gourmet-dish-up-startCooking
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 結果成功/失敗
+                required:
+                  - status
+      tags:
+        - dish-up
+      description: デシャップ画面から「注文を受ける」ボタン押下で予約ステータスを「ENSURE」に替える
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationId:
+                  type: integer
+                  description: 予約id
+              required:
+                - reservationId
+  '/gourmet/v1/{langCd}/takeout/reservation/close':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: テイクアウト-商品を受取る
+      operationId: post-v1-langCd-gourmet-takeout-reservation-close
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 処理成功/失敗
+                required:
+                  - status
+      description: 'ユーザが予約後Mypage(予約確認ページ)で「商品を受取る」ボタンを押下したときに記録する  '
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationNo:
+                  type: string
+                  description: 予約No(app_cd+予約id)
+                tel:
+                  type: string
+                  description: 電話番号
+              required:
+                - reservationNo
+                - tel
+      tags:
+        - takeout
+  '/gourmet/v1/{langCd}/store/{id}/review':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: 店舗に紐づく口コミ一覧を取得する
+      tags:
+        - store
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+      operationId: get-v1-langCd-gourmet-store-id-review
+      description: 店舗に紐づく口コミ一覧を取得する
+  '/gourmet/v1/{langCd}/store/{id}/image':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: 店舗に紐づく画像一覧を取得する
+      tags:
+        - store
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    image:
+                      $ref: '#/components/schemas/Image'
+                    isPost:
+                      type: boolean
+                      description: ユーザが投稿したか否か
+                    menu:
+                      type: object
+                      description: ''
+                      required:
+                        - id
+                        - name
+                        - appCd
+                        - price
+                      properties:
+                        id:
+                          type: integer
+                          description: メニューid
+                        name:
+                          type: string
+                          description: メニュー名
+                        appCd:
+                          type: string
+                          description: 利用cd
+                        price:
+                          type: object
+                          required:
+                            - id
+                            - priceCd
+                            - price
+                          properties:
+                            id:
+                              type: integer
+                              description: 価格id
+                            priceCd:
+                              type: string
+                              description: 価格コード
+                            price:
+                              type: integer
+                              description: 価格
+                    reviews:
+                      type: array
+                      description: 口コミ3個まで
+                      maxItems: 3
+                      minItems: 0
+                      items:
+                        $ref: '#/components/schemas/Review'
+                  required:
+                    - image
+                    - isPost
+      operationId: get-v1-langCd-gourmet-store-id-image
+      description: 店舗に紐づく画像一覧を取得する
+  '/gourmet/v1/{langCd}/store/{id}/takeoutMenu':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: 店舗に紐づくテイクアウトメニュー一覧を取得する
+      tags:
+        - store
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TakeoutMenuThumbInStore'
+      operationId: get-v1-langCd-gourmet-store-id-takeoutMenu
+      description: 店舗に紐づくテイクアウトメニュー一覧を取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: pickUpDate
+          description: 受取日(yyyy-mm-dd)
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: pickUpTime
+          description: '受取時間(H:i)'
+          required: true
+  '/gourmet/v1/{langCd}/takeout/story':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: テイクアウトのストーリー一覧取得
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: ストーリーid
+                    title:
+                      type: string
+                      description: 記事タイトル
+                    appCd:
+                      type: string
+                      description: 利用コード
+                    guideUrl:
+                      type: string
+                      description: 観光ガイドurl
+                    image:
+                      $ref: '#/components/schemas/Image'
+                  required:
+                    - id
+                    - title
+                    - appCd
+                    - guideUrl
+                    - image
+        '204':
+          description: No Content
+      operationId: get-v1-langCd-gourmet-story
+      tags:
+        - takeout
+      description: テイクアウトのストーリー用のメタ情報一覧取得
+  '/gourmet/v1/{langCd}/takeout/recommend':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: おすすめテイクアウトを取得
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TakeoutMenuThumbRec'
+      operationId: get-v1-langCd-gourmet-takeout-recommend
+      description: おすすめテイクアウトを取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: areaCd
+          description: エリアコード
+  '/gourmet/v1/{langCd}/reservation/review':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: アンケート情報を登録する
+      operationId: post-v1-langCd-gourmet-reservation-reveiw
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 処理結果
+                  message:
+                    type: string
+                    description: 処理結果のメッセージ
+                required:
+                  - status
+                  - message
+      description: アンケート情報を登録する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationNo:
+                  type: string
+                  description: 予約No
+                menuId:
+                  type: integer
+                  description: メニューid
+                evaluationCd:
+                  type: string
+                  description: 評価cd
+                body:
+                  type: string
+                  description: 内容
+                isRealName:
+                  type: boolean
+                  description: 本名か否か
+              required:
+                - reservationNo
+                - menuId
+                - evaluationCd
+                - isRealName
+      tags:
+        - store
+    get:
+      summary: アンケートを取得する
+      operationId: get-v1-langCd-gourmet-reservation-review
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 結果
+                  message:
+                    type: string
+                    description: 結果メッセージ
+                  hasReview:
+                    type: boolean
+                    description: 'レビュー済:true, レビュー未:false'
+                  isMember:
+                    type: boolean
+                    description: 会員(true)か否か(false)
+                  firstName:
+                    type: string
+                    description: 名
+                  lastName:
+                    type: string
+                    description: 姓
+                  reservationMenus:
+                    type: array
+                    description: 予約メニュー
+                    items:
+                      $ref: '#/components/schemas/ReservationMenu'
+                required:
+                  - status
+                  - message
+                  - hasReview
+                  - isMember
+                  - firstName
+                  - lastName
+      description: アンケート情報を取得する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewToken:
+                  type: string
+                  description: 予約idに来店時間からn日のタイムスタンプをつけて暗号化した文字列
+              required:
+                - reviewToken
+        description: アンケート専用のトークンを渡す
+      tags:
+        - store
+  '/gourmet/v1/{langCd}/restaurant/notice':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: レストラン-お知らせ
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RestaurantNotice'
+        '204':
+          description: No Content
+      operationId: get-v1-langCd-gourmet-restrant-notice
+      description: レストランのお知らせ一覧を取得する。
+  '/gourmet/v1/{langCd}/store/search':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: レストラン-店舗一覧取得
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  searchResult:
+                    type: object
+                    properties:
+                      detailGenres:
+                        type: array
+                        description: こだわりジャンル一覧。店舗が存在するものだけ。(レストランのみ)
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                              description: ジャンル名
+                            genreCd:
+                              type: string
+                              description: ジャンルコード
+                            appCd:
+                              type: string
+                              description: 利用cd
+                            path:
+                              type: string
+                              description: 階層の深度
+                            detailGenresChild:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/StoreGenre'
+                      stores:
+                        type: array
+                        description: 店舗一覧
+                        items:
+                          $ref: '#/components/schemas/RestaurantStore'
+                      sumCount:
+                        type: integer
+                        description: 検索結果の合計数
+                      page:
+                        type: integer
+                        description: nページ目
+                      pageMax:
+                        type: integer
+                        description: ページ最大値
+                      cookingGenres:
+                        type: array
+                        description: 料理ジャンル・メニュージャンル(メイン)の親ジャンル
+                        items:
+                          $ref: '#/components/schemas/StoreGenre'
+                      menuGenres:
+                        type: array
+                        description: メインメニュージャンル
+                        items:
+                          $ref: '#/components/schemas/StoreGenre'
+                    required:
+                      - detailGenres
+                      - stores
+                      - sumCount
+                      - page
+                      - pageMax
+                      - cookingGenres
+                      - menuGenres
+      operationId: get-v1-langCd-gourmet-restaurant-search
+      description: '店舗一覧を検索取得する。ジャンルで絞り込める。pageで「もっと見る」。パラメータがないときは現在日時から1時間後で場所は適当(エリアはsuggestCd=AREA,suggestTest=ランダム)'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: cookingGenreCd
+          description: ジャンルコード(料理ジャンル)
+        - schema:
+            type: string
+          in: query
+          name: menuGenreCd
+          description: ジャンルコード(メニュージャンル)
+        - schema:
+            type: string
+          in: query
+          name: suggestCd
+          description: サジェストコード
+        - schema:
+            type: string
+          in: query
+          name: suggestText
+          description: サジェスト内容
+        - schema:
+            type: string
+          in: query
+          name: visitDate
+          description: 来店日(yyyy-mm-dd)
+        - schema:
+            type: string
+          in: query
+          name: visitTime
+          description: '来店時間(H:i)'
+        - schema:
+            type: integer
+          in: query
+          description: 来店人数
+          name: visitPeople
+        - schema:
+            type: integer
+          in: query
+          name: page
+          description: 取得ページ
+        - schema:
+            type: number
+            format: double
+          in: query
+          name: latitude
+          description: 緯度
+        - schema:
+            type: number
+            format: double
+          in: query
+          name: longitude
+          description: 経度
+        - schema:
+            type: string
+          in: query
+          name: appCd
+          description: 利用サービス
+        - schema:
+            type: integer
+          in: query
+          name: lowerPrice
+          description: 下限予算
+        - schema:
+            type: integer
+          in: query
+          name: upperPrice
+          description: 上限予算
+        - schema:
+            type: string
+          in: query
+          name: details
+          description: 'こだわり条件のidのリスト(1,2,3)'
+        - schema:
+            type: integer
+          in: query
+          name: zone
+          description: '1:昼, 0:夜'
+  '/gourmet/v1/{langCd}/store/{id}/restaurantMenu':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: 店舗に紐づくレストランプラン一覧を取得する
+      tags:
+        - store
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  restaurantMenus:
+                    type: array
+                    description: コース一覧
+                    items:
+                      $ref: '#/components/schemas/RestaurantMenuThumInStore'
+                  stocks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        vacancyTime:
+                          type: string
+                          description: '空席時間(H:i)'
+                        people:
+                          type: integer
+                          description: 人数
+                        sets:
+                          type: integer
+                          description: 在庫数
+                      required:
+                        - vacancyTime
+                        - people
+                        - sets
+                required:
+                  - restaurantMenus
+      operationId: get-v1-langCd-gourmet-store-id-RestaurantMenu
+      description: 店舗に紐づくレストランプラン一覧を取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: visitDate
+          description: 来店日(Y-m-d)
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: visitTime
+          description: '来店時間(H:i)'
+        - schema:
+            type: integer
+            default: 2
+          in: query
+          name: visitPeople
+          description: 来店人数
+        - schema:
+            type: boolean
+          in: query
+          name: dateUndecided
+          description: '日付未定 true:日付未定である, false:日付未定ではない'
+          required: true
+  '/gourmet/v1/{langCd}/restaurant/menu/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: プラン詳細
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: レストランメニューid
+                  name:
+                    type: string
+                    description: メニュー名
+                  description:
+                    type: string
+                    description: メニュー説明
+                  image:
+                    $ref: '#/components/schemas/RestaurantMenuImage'
+                  price:
+                    $ref: '#/components/schemas/RestaurantMenuPrice'
+                  numberOfCourse:
+                    type: integer
+                    description: 品数
+                  availableNumberOfLowerLimit:
+                    type: integer
+                    description: 利用可能下限人数
+                  availableNumberOfUpperLimit:
+                    type: integer
+                    description: 利用可能下限人数
+                  freeDrinks:
+                    type: boolean
+                    description: 飲み放題あり/なし
+                  options:
+                    type: array
+                    description: レストランオプション
+                    items:
+                      $ref: '#/components/schemas/RestaurantOption'
+                  plan:
+                    type: string
+                    description: プラン内容
+                  reviews:
+                    type: array
+                    description: クチコミ
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  providedTime:
+                    type: integer
+                    description: 提供時間(分)
+                  onlySeat:
+                    type: boolean
+                    description: 席のみか否か
+                  notes:
+                    type: string
+                    description: 注意事項
+                  salesLunchStartTime:
+                    type: string
+                    description: 販売開始時間ランチ
+                  salesLunchEndTime:
+                    type: string
+                    description: 販売終了時間ランチ
+                  salesDinnerStartTime:
+                    type: string
+                    description: 販売開始時間ディナー
+                  salesDinnerEndTime:
+                    type: string
+                    description: 販売終了時間ディナー
+                  lowerOrdersTime:
+                    type: integer
+                    description: 最低注文時間(メニュー)
+                  result:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
+                        description: true/false
+                      message:
+                        type: string
+                        description: 結果メッセージ
+                required:
+                  - result
+      description: メニューidから詳細を取得する
+      operationId: get-v1-langCd-gourmet-restaurant-menu-id
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: visitDate
+          description: 来店日(Y-m-d)
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: visitTime
+          description: '来店時間(H:i)'
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: visitPeople
+          description: 来店人数
+          required: true
+  '/gourmet/v1/{langCd}/restaurant/reservation/save':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: レストラン-予約申し込み事前処理
+      operationId: post-v1-langCd-gourmet-restaurant-reservation-save
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentUrl:
+                    type: string
+                    description: 支払い先Url
+                  result:
+                    type: object
+                    description: 結果
+                    properties:
+                      status:
+                        type: boolean
+                        description: 結果ステータス(true/false)
+                      message:
+                        type: string
+                        description: 結果メッセージ
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer:
+                  $ref: '#/components/schemas/Customer'
+                application:
+                  $ref: '#/components/schemas/Application2'
+                adCd:
+                  type: string
+                  description: 広告コード
+      tags:
+        - restaurant
+      description: |-
+        決済APIへ処理を移譲するため(PSIDSSの関係で画面遷移する)、予約に必要な情報はサーバに保持する
+        また、決済用に申込の空情報を作成し、決済ページへの遷移URLを返す
+  '/gourmet/v1/{langCd}/restaurant/reservation/complete':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: レストラン-予約完了
+      operationId: post-v1-langCd-gourmet-restaurant-reservation-complete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 予約結果
+                  message:
+                    type: string
+                    description: メッセージ
+                  loginForm:
+                    $ref: '#/components/schemas/loginForm'
+                required:
+                  - status
+                  - message
+      tags:
+        - restaurant
+      description: 予約処理を確定・完了する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionToken:
+                  type: string
+                  description: CSRFトークン(一意性担保のためのトークン)
+              required:
+                - sessionToken
+  '/gourmet/v1/{langCd}/area/{areaCd}':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: string
+        name: areaCd
+        in: path
+        required: true
+        description: エリアコード
+    get:
+      summary: エリア一覧を取得する
+      tags:
+        - util
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  areas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Area'
+      operationId: get-gourmet-v1-langCd-area
+      description: |-
+        SEO用指定した階層のエリア一覧を取得する
+        より下位の一覧まで取得する場合はlowerLevelを指定する
+        都道府県自体を取ってくる時はareaCdにjapanと入れる
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: lowerLevel
+          description: 取得する階層の下限(1だと1階層下まで、2だと2階層下まで)
+  '/gourmet/v1/{langCd}/takeout/searchBox':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: テイクアウト-検索ボックス取得
+      tags:
+        - takeout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  areas:
+                    type: array
+                    description: エリアリスト
+                    items:
+                      $ref: '#/components/schemas/Area'
+                required:
+                  - areas
+      operationId: get-gourmet-v1-langCd-takeout-searchBox
+      description: 検索ボックスに必要なエリア情報を取得する
+  '/gourmet/v1/{langCd}/store/{id}/breadcrumb':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: ぱんくず取得
+      tags:
+        - store
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  breadcrumb:
+                    $ref: '#/components/schemas/Breadcrumb'
+      operationId: get-gourmet-v1-langCd-store-id-breadcrumb
+      description: 店舗と検索時のぱんくずを取得する
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: isStore
+          description: 店舗用ぱんくず
+        - schema:
+            type: boolean
+          in: query
+          name: isSearch
+          description: 検索用ぱんくず
+        - schema:
+            type: string
+          in: query
+          name: cookingGenreCd
+          description: 料理ジャンルコード
+        - schema:
+            type: string
+          in: query
+          name: menuGenreCd
+          description: メニュージャンルコード
+        - schema:
+            type: string
+          in: query
+          name: suggestCd
+          description: サジェストコード
+        - schema:
+            type: string
+          in: query
+          name: suggenstText
+          description: サジェストテキスト
+  '/gourmet/v1/{langCd}/restaurant/reservation/change':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: レストラン - 予約変更処理
+      operationId: post-gourmet-v1-langCd-restaurant-reservation-change
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 成功/失敗
+                  message:
+                    type: string
+                    description: 結果メッセージ
+                  returnUrl:
+                    type: string
+                    description: 決済URL(金額変更したとき)
+                  isOnlySeat:
+                    type: boolean
+                    description: 席のみか否か
+                required:
+                  - status
+      tags:
+        - restaurant
+      description: レストランの予約を変更する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                visitDate:
+                  type: string
+                  description: 来店日
+                visitTime:
+                  type: string
+                  description: 来店時間
+                persons:
+                  type: integer
+                  description: 人数
+                reservationId:
+                  type: integer
+                  description: 予約id
+                request:
+                  type: string
+                  description: お店への要望
+              required:
+                - reservationId
+        description: ''
+  '/gourmet/v1/{langCd}/restaurant/reservation/cancel':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    post:
+      summary: レストラン - 予約キャンセル
+      operationId: post-gourmet-v1-langCd-restaurant-reservation-cancel
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 成功/失敗
+                  message:
+                    type: string
+                    description: 結果メッセージ
+      description: レストランの予約をキャンセルする
+      tags:
+        - restaurant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationId:
+                  type: integer
+                  description: 予約id
+              required:
+                - reservationId
+  '/gourmet/v1/{langCd}/restaurant/story':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: レストランのストーリー一覧取得
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: ストーリーid
+                    title:
+                      type: string
+                      description: 記事タイトル
+                    appCd:
+                      type: string
+                      description: 利用コード
+                    guideUrl:
+                      type: string
+                      description: 観光ガイドurl
+                    image:
+                      $ref: '#/components/schemas/Image'
+                  required:
+                    - id
+                    - title
+                    - appCd
+                    - guideUrl
+                    - image
+        '204':
+          description: No Content
+      operationId: get-gourmet-v1-langCd-restaurant-story
+      description: レストランのストーリー用のメタ情報一覧取得
+  '/gourmet/v1/{langCd}/payment/authCallback':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: 与信コールバック用API
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      operationId: get-gourmet-v1-langCd-payment-authCallback
+      description: |-
+        与信コールバック用API(一意にトランザクションが決まらなかったらパラメータを付与しておく)
+        レスポンスは「https://docs.google.com/document/d/1O9_7nJGCpATFULNPKegxMgOjtguvm_fXRBLtJPTCH7o/edit」参照
+      tags:
+        - util
+  '/gourmet/v1/{langCd}/restaurant/reservation/calcPriceMenu':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: 料金計算をする
+      operationId: get-gourmet-v1-langCd-restaurant-calcPriceMenu
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 結果ステータス
+                  message:
+                    type: string
+                    description: メッセージ
+                  price:
+                    type: integer
+                    description: 金額
+                required:
+                  - status
+                  - message
+                  - price
+      tags:
+        - restaurant
+      description: コース内容を変更した場合にかかる料金を計算する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: visitDate
+          description: 来店日
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: visitTime
+          description: 来店時間
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: persons
+          description: 人数
+          required: true
+        - schema:
+            type: integer
+          in: query
+          name: reservationId
+          description: 予約id
+          required: true
+  '/gourmet/v1/{langCd}/restaurant/reservation/calcCancelFee':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: キャンセル料を計算する
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: 結果ステータス
+                  message:
+                    type: string
+                    description: メッセージ
+                  cancelPrice:
+                    type: integer
+                    description: キャンセル予定額
+                  refundPrice:
+                    type: integer
+                    description: 返金予定額
+                required:
+                  - status
+                  - message
+                  - cancelPrice
+                  - refundPrice
+      operationId: get-gourmet-v1-langCd-restaurant-reservation-calcCancelFee
+      description: キャンセル料を計算する(キャンセル前にキャンセル予定額を取得する目的で使用)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationId:
+                  type: integer
+                  description: 予約id
+  '/gourmet/v1/{langCd}/restaurant/searchBox':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: レストラン-検索ボックス取得
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  areas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Area'
+      operationId: get-gourmet-v1-langCd-restaurant-searchBox
+      description: 検索ボックスに必要なエリア情報を取得する
+  '/gourmet/v1/{langCd}/restaurant/recommend':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: おすすめレストランを取得
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                          description: 店舗名
+                        description:
+                          type: string
+                          description: 店舗説明
+                        thumImage:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            imageCd:
+                              type: string
+                              description: 画像コード
+                            imageUrl:
+                              type: string
+                              description: 画像コード
+                          required:
+                            - id
+                            - imageCd
+                            - imageUrl
+                      required:
+                        - id
+                        - name
+      operationId: get-gourmet-v1-langCd-restaurant-recommend
+      description: おすすめレストランを取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: areaCd
+          description: エリアコード
+        - schema:
+            type: string
+          in: query
+          name: stationCd
+          description: 駅コード
+  '/gourmet/v1/{langCd}/restaurant/menuVacancy':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+    get:
+      summary: メニュー単位の在庫取得
+      tags:
+        - restaurant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stocks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        vacancyTime:
+                          type: string
+                          description: '空席時間(H:i)'
+                        people:
+                          type: integer
+                          description: 人数
+                        sets:
+                          type: integer
+                          description: 在庫数
+                      required:
+                        - vacancyTime
+                        - people
+                        - sets
+      operationId: get-gourmet-v1-langCd-restuarant-menuStock
+      description: メニュー単位の在庫を取得する。メニューidかreservationIdのどちらかから該当するメニューidを取得する。reservationIdから取得する場合はreservationMenusの最初のメニューでよい。
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: visitDate
+          description: 来店日
+          required: true
+        - schema:
+            type: integer
+          in: query
+          name: menuId
+          description: メニューid
+        - schema:
+            type: integer
+          in: query
+          name: reservationId
+          description: 予約id
+  '/gourmet/v1/{langCd}/store/{id}/cancelPolicy':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: キャンセルポリシーを取得
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                description: キャンセルポリシー
+                items:
+                  $ref: '#/components/schemas/CancelFee'
+      operationId: get-gourmet-v1-langCd-restaurant-cancelPolicy
+      description: キャンセルポリシーを取得する
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: appCd
+          description: 利用サービス
+          required: true
+      tags:
+        - store
+  '/gourmet/v1/{langCd}/store/{id}/buffet':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+        description: 言語コード(ISO639)
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: 店舗id
+    get:
+      summary: 店舗に紐づくビュッフェ情報を取得する
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                        description: 店舗名
+                      images:
+                        type: array
+                        description: 店舗画像
+                        items:
+                          $ref: '#/components/schemas/BuffetStoreImage'
+                      area:
+                        $ref: '#/components/schemas/BuffetStoreArea'
+                  menus:
+                    type: array
+                    description: ビュッフェメニュー一覧
+                    items:
+                      $ref: '#/components/schemas/StoreBuffetMenu'
+                  recommend:
+                    type: array
+                    description: おすすめレストラン
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                          description: レストラン名
+                        images:
+                          type: array
+                          description: レストラン画像
+                          items:
+                            $ref: '#/components/schemas/BuffetStoreImage'
+                      required:
+                        - id
+                        - name
+                        - images
+      operationId: get-v1-lang_cd-restaurant-buffet
+      description: 店舗idとジャンルIDから該当するメニューとおすすめレストラン情報を取得する
+      parameters:
+        - schema:
+            type: string
+          name: genreId
+          in: query
+          required: true
+          description: ジャンルID
+      tags:
+        - store
+  '/gourmet/v1/{langCd}/reservation/directPayment':
+    parameters:
+      - schema:
+          type: string
+        name: langCd
+        in: path
+        required: true
+    post:
+      summary: 直決済誘導用のAPI
+      operationId: post-gourmet-v1-langCd-reservation-directPayment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    description: '結果ステータス(true,false)'
+                  message:
+                    type: string
+                    description: メッセージ
+                  paymentUrl:
+                    type: string
+                    description: 決済画面遷移用URL
+                required:
+                  - status
+                  - message
+                  - paymentUrl
+      description: ユーザ画面から直接決済画面に遷移するために必要なレスポンスを発行する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservationId:
+                  type: integer
+                  description: 予約id
+              required:
+                - reservationId
+      tags:
+        - restaurant
+components:
+  schemas:
+    TakoutNotice:
+      title: TakeoutNotice
+      type: object
+      description: テイクアウト-お知らせ
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          description: お知らせのタイトル。中身は別ページ(/gourmet/takeout/news)に飛ぶ
+        message:
+          type: string
+          description: お知らせの中身
+        datetimeFrom:
+          type: string
+          format: date-time
+          description: 掲載開始日時
+        datetimeTo:
+          type: string
+          format: date-time
+          description: 掲載終了日時
+        publishedAt:
+          type: string
+          description: 公開日
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日
+      required:
+        - id
+        - title
+        - message
+        - datetimeFrom
+        - datetimeTo
+        - publishedAt
+    StoreGenre:
+      title: StoreGenre
+      type: object
+      x-tags:
+        - store
+      description: 店舗-ジャンル
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: ジャンル名
+        genreCd:
+          type: string
+          description: ジャンルコード
+        appCd:
+          type: string
+          description: 利用cd
+        path:
+          type: string
+          description: 階層の深度
+        isDelegate:
+          type: string
+          description: メインか否か
+      required:
+        - id
+        - name
+        - genreCd
+        - appCd
+        - path
+    TakeoutGenre:
+      title: TakeoutGenre
+      type: object
+      x-tags:
+        - takeout
+      description: テイクアウト-ジャンル
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: ジャンル名
+        genreCd:
+          type: string
+          description: ジャンルコード
+        appCd:
+          type: string
+          description: 利用cd
+        path:
+          type: string
+          description: 階層の深度
+        level:
+          type: integer
+          description: 深層度
+      required:
+        - id
+        - name
+        - genreCd
+        - appCd
+        - path
+        - level
+    TakeoutMenu:
+      title: TakeoutMenu
+      type: object
+      description: テイクアウト-メニュー
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: メニュー名
+          example: 鴨胸肉のロースト
+        description:
+          type: string
+          description: の説明
+        appCd:
+          type: string
+          description: グルメ内のサービスコード
+        salesLunchStartTime:
+          type: string
+          description: 'ランチ販売開始時間(H:i),24時間制'
+          example: '12:00'
+        salesLunchEndTime:
+          type: string
+          example: '15:00'
+          description: 'ランチ販売終了時間(H:i),24時間制'
+        salesDinnerStartTime:
+          type: string
+          description: 'ディナー販売開始時間(H:i),24時間制'
+          example: '17:00'
+        salesDinnerEndTime:
+          type: string
+          example: '23:00'
+          description: 'ディナー販売終了時間(H:i),24時間制'
+        stockNumber:
+          type: integer
+          description: 在庫数
+        menuImage:
+          $ref: '#/components/schemas/TakeoutMenuImage'
+        menuPrice:
+          $ref: '#/components/schemas/TakeoutMenuPrice'
+        store:
+          $ref: '#/components/schemas/ShortStore'
+        options:
+          type: array
+          description: オプション一覧
+          items:
+            $ref: '#/components/schemas/TakeoutOption'
+        isFavorite:
+          type: boolean
+          description: お気に入りに登録されているか否か(ログイン時)
+        status:
+          type: object
+          properties:
+            canSale:
+              type: boolean
+              description: 販売できるか否か
+            message:
+              type: string
+              description: 'ステータスメッセージ(***な理由で売れません)'
+        evaluations:
+          type: array
+          description: 評価
+          items:
+            $ref: '#/components/schemas/Evaluation'
+      required:
+        - id
+        - name
+        - appCd
+        - stockNumber
+        - menuImage
+    TakeoutMenuImage:
+      title: TakeoutMenuImage
+      type: object
+      description: テイクアウト-メニュー画像
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        imageCd:
+          type: string
+          description: 画像コード
+          example: THUMBNAIL
+        imageUrl:
+          type: string
+          description: 画像URL
+      required:
+        - id
+        - imageCd
+        - imageUrl
+    TakeoutMenuPrice:
+      title: TakeoutMenuPrice
+      type: object
+      description: テイクアウト-メニュー価格
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        priceCd:
+          type: string
+          description: 価格コード
+          example: NORMAL
+        price:
+          type: integer
+          description: 価格
+      required:
+        - id
+        - priceCd
+        - price
+    Store:
+      title: Store
+      type: object
+      description: 店舗情報(詳細込)
+      x-tags:
+        - store
+      properties:
+        storeGenres:
+          type: array
+          description: 店舗ジャンル一覧
+          items:
+            $ref: '#/components/schemas/StoreGenre'
+        topImages:
+          type: array
+          description: 店舗画像一覧(topの5枚)
+          items:
+            $ref: '#/components/schemas/Image'
+        openingHours:
+          type: array
+          description: 営業時間
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+        evaluation:
+          type: array
+          description: 評価
+          items:
+            $ref: '#/components/schemas/Evaluation'
+        id:
+          type: integer
+        name:
+          type: string
+          description: 店舗名
+        aliasName:
+          type: string
+          description: 別名
+        address:
+          type: string
+          description: 住所
+        postalCode:
+          type: string
+          description: 郵便番号
+        tel:
+          type: string
+          description: 電話番号
+        latitude:
+          type: number
+          description: 緯度
+          format: double
+        longitude:
+          type: number
+          description: 経度
+          format: double
+        email_1:
+          type: string
+          description: 店のメールアドレス(１つ目だけ)
+        daytimeBudgetLowerLimit:
+          type: integer
+          description: 昼予算下限
+        daytimeBudgetLimit:
+          type: integer
+          description: 昼予算上限
+        nightBudgetLowerLimit:
+          type: string
+          description: 夕予算下限
+        nightBudgetLimit:
+          type: string
+          description: 夕予算上限
+        access:
+          type: string
+          description: 交通手段
+        account:
+          type: string
+          description: 公式アカウント
+        remarks:
+          type: string
+          description: 備考
+        description:
+          type: string
+          description: 店舗説明
+        fax:
+          type: string
+          description: FAX番号
+        useFax:
+          type: boolean
+          description: FAX利用する/しない
+        regularHoliday:
+          type: string
+          description: 定休日
+        canCard:
+          type: boolean
+          description: カード利用可/不可
+        cardTypes:
+          type: string
+          description: 利用可能カード種類(json)
+        canDigitalMoney:
+          type: string
+          description: 電子マネー利用可/不可
+        digitalMoneyTypes:
+          type: string
+          description: 利用可能電子マネー種類(json)
+        hasPrivateRoom:
+          type: boolean
+          description: 個室有り/無し
+        privateRoomTypes:
+          type: string
+          description: 個室の種類のリスト(json)
+        hasParking:
+          type: boolean
+          description: 駐車場有り/無し
+        hasCoinParking:
+          type: boolean
+          description: 近隣にコインパーキング有り/無し
+        numberOfSeats:
+          type: integer
+          description: 座席数
+        canCharter:
+          type: boolean
+          description: 貸切有り/無し
+        charterTypes:
+          type: string
+          description: 貸切の種類のリスト(json)
+        smoking:
+          type: boolean
+          description: 喫煙可/不可
+        smokingTypes:
+          type: string
+          description: 喫煙タイプのリスト(json)
+        isFavorite:
+          type: boolean
+          description: 会員のときにお気に入りに登録されていたらtrue、それ以外false
+        ' Infection':
+          type: string
+          description: 感染症対策
+      required:
+        - id
+        - name
+        - address
+        - postalCode
+        - tel
+        - latitude
+        - longitude
+        - useFax
+    Review:
+      title: Review
+      type: object
+      description: 口コミ(まだ貯めるだけで表示までしない)+評価
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          description: ユーザid
+        username:
+          type: string
+          description: ユーザ名
+        body:
+          type: string
+          description: 内容
+        evaluationCd:
+          type: string
+          description: 評価コード
+        image:
+          $ref: '#/components/schemas/Image'
+        craetedAt:
+          type: string
+          description: 投稿日
+          format: date-time
+      required:
+        - id
+        - userId
+        - username
+        - body
+        - craetedAt
+    loginForm:
+      title: loginForm
+      type: object
+      description: 予約確認(マイページ)へのログイン
+      x-tags:
+        - auth
+      properties:
+        reservationNo:
+          type: string
+          description: 予約No=skyticketサービスコード+グルメサービスコード+予約id
+        tel:
+          type: string
+          description: 電話番号
+        isMemberUser:
+          type: boolean
+          description: skyticket会員ユーザであるか否か
+        isLogin:
+          type: boolean
+          description: 既にログインしているか否か
+    Reservation:
+      title: Reservation
+      type: object
+      description: 予約情報
+      x-tags:
+        - reservation
+      properties:
+        id:
+          type: number
+        appCd:
+          type: string
+          description: グルメ内のサービスコード
+        firstName:
+          type: string
+          description: 名
+        lastName:
+          type: string
+          description: 姓
+        email:
+          type: string
+          description: メールアドレス
+        tel:
+          type: string
+          description: 電話番号
+        total:
+          type: integer
+          description: 合計金額
+        afterTotal:
+          type: integer
+          description: 変更後合計金額
+        reservationStatus:
+          type: string
+          description: 予約ステータス
+        paymentStatus:
+          type: string
+          description: 入金ステータス
+        paymentLimit:
+          type: string
+          description: '入金期限(y-m-d H:i:s)'
+          format: date-time
+        cancelDatetime:
+          type: string
+          format: date-time
+          description: キャンセル日時
+        pickUpDateTime:
+          type: string
+          format: date-time
+          description: 注文受取時間
+        pickUpReceiveDateTime:
+          type: string
+          description: 注文受け取った時間
+        request:
+          type: string
+          description: 要望
+        hasReview:
+          type: boolean
+          description: アンケート済みか否か
+        reviewToken:
+          type: string
+          description: 予約idに来店時間からn日のタイムスタンプをつけて暗号化した文字列
+        reservationMenus:
+          type: array
+          description: 予約メニュー
+          items:
+            $ref: '#/components/schemas/ReservationMenu'
+        reservationStore:
+          $ref: '#/components/schemas/ReservationStore'
+      required:
+        - id
+        - appCd
+        - firstName
+        - lastName
+        - email
+        - tel
+        - reservationStatus
+        - paymentStatus
+        - total
+    Customer:
+      title: Customer
+      type: object
+      description: 顧客モデル-申込用
+      x-tags:
+        - takeout
+      properties:
+        firstName:
+          type: string
+          description: 名
+        lastName:
+          type: string
+          description: 姓
+        email:
+          type: string
+          description: メールアドレス
+        tel:
+          type: string
+          description: 電話番号
+        request:
+          type: string
+          description: 要望
+      required:
+        - firstName
+        - lastName
+        - email
+        - tel
+    Application:
+      title: Application
+      type: object
+      description: 申込情報
+      x-tags:
+        - takeout
+      properties:
+        menus:
+          type: array
+          description: 申込メニュー一覧
+          items:
+            type: object
+            properties:
+              menu:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: メニューid
+                  count:
+                    type: integer
+                    description: メニュー数
+                required:
+                  - id
+                  - count
+              options:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: オプションid
+                    keywordId:
+                      type: integer
+                      description: 項目id
+                    contentsId:
+                      type: integer
+                      description: 内容id
+        pickUpDate:
+          type: string
+          description: 注文日
+        pickUpTime:
+          type: string
+          description: 注文時間
+      required:
+        - pickUpDate
+        - pickUpTime
+    PaymentRequest:
+      title: PaymentRequest
+      type: object
+      description: 決済リクエスト用
+      x-tags:
+        - takeout
+      properties:
+        returnUrl:
+          type: string
+          description: 決済APIからの戻ってくるを指定できるのでフロントから指定する
+    ReservationMenu:
+      title: ReservationMenu
+      type: object
+      x-tags:
+        - reservation
+      description: '予約メニューモデル:予約モデルとN:1の関係になる'
+      properties:
+        id:
+          type: integer
+          description: ''
+        reservationId:
+          type: integer
+          description: 予約id
+        name:
+          type: string
+          description: メニュー名
+        count:
+          type: integer
+          description: 個数
+        persons:
+          type: integer
+          description: 人数
+        unitPrice:
+          type: integer
+          description: 単価
+        price:
+          type: integer
+          description: 金額
+        onlySeat:
+          type: boolean
+          description: 席のみか否か
+        menuId:
+          type: integer
+          description: メニューid
+        reservationOptions:
+          type: array
+          description: 予約オプションのリスト
+          items:
+            $ref: '#/components/schemas/ReservationOption'
+      required:
+        - id
+        - reservationId
+        - name
+        - count
+        - persons
+        - unitPrice
+        - price
+        - menuId
+    ReservationStore:
+      title: ReservationStore
+      type: object
+      description: "予約\bした店"
+      x-tags:
+        - reservation
+      properties:
+        id:
+          type: integer
+        reservationId:
+          type: integer
+          description: 予約id
+        name:
+          type: string
+          description: 店舗名
+        postalCode:
+          type: string
+          description: 郵便番号
+        address:
+          type: string
+          description: 住所
+        email:
+          type: string
+          description: メールアドレス
+        tel:
+          type: string
+          description: 電話番号
+        latitude:
+          type: number
+          description: 緯度
+          format: double
+        longtitue:
+          type: number
+          format: double
+          description: 経度
+        storeId:
+          type: integer
+          description: 店舗id
+        genres:
+          type: array
+          description: 店舗の料理ジャンル(レストラン用)
+          items:
+            $ref: '#/components/schemas/StoreGenre'
+        openingHours:
+          type: array
+          description: 営業時間(来店日に合わせたもの、レストラン用)
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+      required:
+        - id
+        - reservationId
+        - name
+        - address
+        - tel
+        - latitude
+        - longtitue
+        - storeId
+        - postalCode
+    OpeningHour:
+      title: OpeningHour
+      type: object
+      description: 営業時間
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        openTime:
+          type: string
+          description: '営業開始時間(H:i)'
+        closeTime:
+          type: string
+          description: '営業終了時間(H:i)'
+        code:
+          type: string
+          description: 営業時間コード
+        lastOrderTIme:
+          type: string
+          description: ラストオーダー時間
+        week:
+          type: string
+          description: 営業曜日
+      required:
+        - id
+        - openTime
+        - closeTime
+        - code
+        - week
+    TakeoutMenuThumb:
+      title: TakeoutMenuThumb
+      type: object
+      description: サムネイル用(一覧表示用)のテイクアウトメニュー
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        thumbImage:
+          $ref: '#/components/schemas/TakeoutMenuImage'
+        price:
+          $ref: '#/components/schemas/TakeoutMenuPrice'
+        store:
+          $ref: '#/components/schemas/SimpleStore'
+      required:
+        - id
+        - name
+        - thumbImage
+        - price
+        - store
+    SimpleStore:
+      title: SimpleStore
+      type: object
+      description: サムネイル用簡易な店舗情報
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: 店名
+        latitude:
+          type: number
+          format: double
+          description: 緯度
+        longitude:
+          type: number
+          format: double
+          description: 経度
+        ditance:
+          type: integer
+          description: 距離(m)
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
+        - ditance
+    ShortStore:
+      title: ShortStore
+      type: object
+      description: メニュー詳細用の簡易な店舗情報
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: 店名
+        latitude:
+          type: number
+          format: double
+          description: 緯度
+        longitude:
+          type: number
+          format: double
+          description: 経度
+        address:
+          type: string
+          description: 住所
+        storeGenres:
+          type: array
+          description: 店舗ジャンル一覧
+          items:
+            $ref: '#/components/schemas/StoreGenre'
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
+        - address
+    TakeoutOption:
+      title: TakeoutOption
+      type: object
+      description: テイクアウト-オプション
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+        optionCd:
+          type: string
+          description: オプションコード
+        required:
+          type: boolean
+          description: 必須(true)か任意(false)か
+        keywordId:
+          type: integer
+          description: 項目id
+        keyword:
+          type: string
+          description: 項目名
+        contentsId:
+          type: integer
+          description: 内容id
+        contents:
+          type: string
+          description: 内容
+        price:
+          type: integer
+          description: 金額
+      required:
+        - id
+        - optionCd
+        - required
+        - contents
+        - price
+    ReservationOption:
+      title: ReservationOption
+      type: object
+      description: 予約オプション
+      x-tags:
+        - reservation
+      properties:
+        id:
+          type: integer
+          description: 予約オプションid
+        optionCd:
+          type: string
+          description: オプションコード
+        keywordId:
+          type: integer
+          description: 項目id
+        keyword:
+          type: string
+          description: 項目名
+        contentsId:
+          type: integer
+          description: 内容id
+        contents:
+          type: string
+          description: 内容
+        price:
+          type: integer
+          description: 金額
+        count:
+          type: integer
+          description: 個数
+        unitPrice:
+          type: integer
+          description: 単価
+      required:
+        - id
+        - optionCd
+        - contentsId
+        - contents
+        - price
+    Evaluation:
+      title: Evaluation
+      type: object
+      description: 評価(取得時に集計する)
+      x-tags:
+        - store
+      properties:
+        evaluationCd:
+          type: string
+          description: 評価コード
+        percentage:
+          type: integer
+          description: 割合
+      required:
+        - evaluationCd
+        - percentage
+    TakeoutMenuThumbInStore:
+      title: TakeoutMenuThumbInStore
+      x-tags:
+        - takeout
+      description: 店舗でサムネイル表示用のテイクアウトメニュー
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        stockNumber:
+          type: integer
+          description: 在庫数
+        thumbImage:
+          $ref: '#/components/schemas/TakeoutMenuImage'
+        price:
+          $ref: '#/components/schemas/TakeoutMenuPrice'
+        takeoutGenres:
+          type: array
+          items:
+            $ref: '#/components/schemas/TakeoutGenre'
+      required:
+        - id
+        - name
+        - thumbImage
+        - price
+    Staff:
+      title: Staff
+      type: object
+      description: スタッフ情報
+      x-tags:
+        - dish-up
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: ユーザ名
+        userName:
+          type: string
+          description: ログインid
+        staffAuthorityId:
+          type: integer
+          description: スタッフ権限id
+        staffAuthorityName:
+          type: string
+          description: スタッフ権限名
+        lastLoginAt:
+          type: string
+          description: 最終ログイン日時
+          format: date-time
+        rememberToken:
+          type: string
+          description: ログイン状態を保持したトークン情報
+      required:
+        - id
+        - name
+        - userName
+        - staffAuthorityId
+        - staffAuthorityName
+    DishUpReserve:
+      title: DishUpReserve
+      type: object
+      description: デシャップ用注文
+      x-tags:
+        - dish-up
+      properties:
+        reservationMenus:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservationMenu'
+        id:
+          type: integer
+        reservationNo:
+          type: string
+          description: 予約No=skyticketサービスコード+グルメサービスコード+予約id
+        reservationStatus:
+          type: string
+        pickUpDateTime:
+          type: string
+          format: date-time
+          description: 注文受取時間
+        storeReceptionDateTime:
+          type: string
+          description: 店舗受付日時
+          format: date-time
+        request:
+          type: string
+          description: お店への連絡事項
+        store:
+          type: object
+          properties:
+            useFax:
+              type: boolean
+              description: Fax利用有無
+          required:
+            - useFax
+        createdAt:
+          type: string
+          description: 注文予約時間
+          format: date-time
+      required:
+        - reservationMenus
+        - id
+        - reservationNo
+        - pickUpDateTime
+        - storeReceptionDateTime
+        - createdAt
+    Image:
+      title: Image
+      type: object
+      description: 画像
+      properties:
+        id:
+          type: integer
+        imageCd:
+          type: string
+          description: 画像コード
+        imageUrl:
+          type: string
+          description: 画像url
+      required:
+        - id
+        - imageCd
+        - imageUrl
+      x-tags:
+        - uti
+    RestaurantNotice:
+      title: RestaurantNotice
+      type: object
+      description: レストラン-お知らせ
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          description: お知らせのタイトル。中身は別ページ(/gourmet/restaurant/news)に飛ぶ
+        message:
+          type: string
+          description: お知らせの中身
+        datetimeFrom:
+          type: string
+          format: date-time
+          description: 掲載開始日時
+        datetimeTo:
+          type: string
+          format: date-time
+          description: 掲載終了日時
+        publishedAt:
+          type: string
+          description: 公開日
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日
+      required:
+        - id
+        - title
+        - message
+        - datetimeFrom
+        - datetimeTo
+        - publishedAt
+      x-tags:
+        - restaurant
+    RestaurantStoreImage:
+      title: RestaurantStoreImage
+      type: object
+      properties:
+        id:
+          type: integer
+        imageCd:
+          type: string
+          description: 画像コード
+          example: MAIN_STORE
+        imageUrl:
+          type: string
+          description: 画像URL
+      required:
+        - id
+        - imageCd
+        - imageUrl
+      description: レストラン-メニュー画像
+      x-tags:
+        - restaurant
+    RestaurantStore:
+      title: RestaurantStore
+      type: object
+      description: レストラン-店舗
+      x-tags:
+        - restaurant
+      properties:
+        id:
+          type: integer
+          description: 店舗id
+        name:
+          type: string
+          description: 店舗名
+        access:
+          type: string
+          description: 交通情報
+        daytimeBudgetLowerLimit:
+          type: integer
+          description: 昼予算下限
+        nightBudgetLowerLimit:
+          type: integer
+          description: 夜予算下限
+        storeGenres:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreGenre'
+        storeImage:
+          $ref: '#/components/schemas/RestaurantStoreImage'
+        recommendMenu:
+          $ref: '#/components/schemas/RestaurantMenuThumb'
+        distance:
+          type: integer
+          description: 距離(m)
+        openinghours:
+          type: array
+          description: 営業時間
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+        latitude:
+          type: number
+          description: 緯度
+        longitude:
+          type: number
+          description: 経度
+        appCd:
+          type: string
+          description: 利用サービス
+        lowerOrdersTime:
+          type: integer
+          description: 最低注文時間(分)
+        priceLevel:
+          type: integer
+          description: 'テイクアウト価格帯(1:安い,2:普通,3:高め,4:高級)'
+      required:
+        - id
+        - name
+        - storeImage
+    RestaurantMenuPrice:
+      title: RestaurantMenuPrice
+      type: object
+      description: コース価格
+      x-tags:
+        - restaurant
+      properties:
+        id:
+          type: integer
+          description: 価格id
+        priceCd:
+          type: string
+          description: 価格コード
+          example: NORMAL
+        price:
+          type: integer
+          description: 価格
+      required:
+        - id
+        - priceCd
+        - price
+    RestaurantMenuThumb:
+      title: RestaurantMenuThumb
+      type: object
+      description: レストラン一覧表示用コース
+      x-tags:
+        - restaurant
+      properties:
+        id:
+          type: integer
+          description: コースid
+        name:
+          type: string
+          description: コース名
+        price:
+          $ref: '#/components/schemas/RestaurantMenuPrice'
+      required:
+        - id
+        - name
+        - price
+    RestaurantMenuThumInStore:
+      title: RestaurantMenuThumInStore
+      type: object
+      description: 店舗でサムネイル表示用のレストランコース
+      x-tags:
+        - restaurant
+      properties:
+        id:
+          type: integer
+          description: レストランメニューid
+        name:
+          type: string
+          description: メニュー名
+        description:
+          type: string
+          description: メニュー説明
+        thumbImage:
+          $ref: '#/components/schemas/RestaurantMenuImage'
+        price:
+          $ref: '#/components/schemas/RestaurantMenuPrice'
+        numberOfCourse:
+          type: integer
+          description: 品数
+        availableNumberOfLowerLimit:
+          type: integer
+          description: 利用可能下限人数
+        availableNumberOfUpperLimit:
+          type: integer
+          description: 利用可能下限人数
+        freeDrinks:
+          type: boolean
+          description: 飲み放題
+        onlySeat:
+          type: boolean
+          description: 席のみか否か
+      required:
+        - id
+        - name
+    RestaurantMenuImage:
+      title: RestaurantMenuImage
+      type: object
+      description: レストラン-メニュー画像
+      x-tags:
+        - restaurant
+      properties:
+        id:
+          type: integer
+        imageCd:
+          type: string
+          description: 画像コード
+        imageUrl:
+          type: string
+          description: 画像URL
+      required:
+        - id
+        - imageCd
+        - imageUrl
+    RestaurantOption:
+      title: RestaurantOption
+      type: object
+      properties:
+        id:
+          type: integer
+        optionCd:
+          type: string
+          description: オプションコード
+        required:
+          type: boolean
+          description: 必須(true)か任意(false)か
+        keywordId:
+          type: integer
+          description: 項目id
+        keyword:
+          type: string
+          description: 項目名
+        contentsId:
+          type: integer
+          description: 内容id
+        contents:
+          type: string
+          description: 内容
+        price:
+          type: integer
+          description: 金額
+      required:
+        - id
+        - optionCd
+        - required
+        - contents
+        - price
+      description: レストランオプション
+      x-tags:
+        - restaurant
+    Application2:
+      title: Application2
+      type: object
+      x-tags:
+        - restaurant
+      description: 申込情報(レストラン用)
+      properties:
+        menus:
+          type: array
+          description: 申込メニュー一覧
+          items:
+            type: object
+            properties:
+              menu:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: メニューid
+                  count:
+                    type: integer
+                    description: メニュー数
+                required:
+                  - id
+                  - count
+              options:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: オプションid
+                    keywordId:
+                      type: integer
+                      description: 項目id
+                    contentsId:
+                      type: integer
+                      description: 内容id
+                    count:
+                      type: integer
+        visitDate:
+          type: string
+          description: 来店日
+        visitTime:
+          type: string
+          description: 来店時間
+        persons:
+          type: integer
+          description: 人数
+    Area:
+      title: Area
+      type: object
+      x-tags:
+        - uti
+      description: エリア
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: エリア名
+        areaCd:
+          type: string
+          description: エリアコード
+        path:
+          type: string
+          description: 階層の深度
+        level:
+          type: integer
+          description: 深層度
+        weight:
+          type: number
+          format: double
+          description: 優先度
+        sort:
+          type: number
+          description: ソート用
+      required:
+        - id
+        - name
+        - areaCd
+        - path
+        - level
+        - weight
+        - sort
+    RecommendStore:
+      title: RecommendStore
+      type: object
+      x-tags:
+        - store
+      description: おすすめ用店舗情報
+      properties:
+        id:
+          type: integer
+          description: 店舗id
+        name:
+          type: string
+          description: 店名
+        genres:
+          type: array
+          description: 料理ジャンル
+          items:
+            $ref: '#/components/schemas/TakeoutGenre'
+        access:
+          type: string
+          description: 交通情報
+      required:
+        - name
+    TakeoutMenuThumbRec:
+      title: TakeoutMenuThumbRec
+      type: object
+      description: サムネイル用(おすすめ用)のテイクアウトメニュー
+      x-tags:
+        - takeout
+      properties:
+        id:
+          type: integer
+          description: メニューid
+        name:
+          type: string
+          description: メニュー前
+        description:
+          type: string
+          description: 説明
+        thumImage:
+          $ref: '#/components/schemas/TakeoutMenuImage'
+        price:
+          $ref: '#/components/schemas/TakeoutMenuPrice'
+        store:
+          $ref: '#/components/schemas/RecommendStore'
+      required:
+        - id
+        - name
+    Breadcrumb:
+      title: Breadcrumb
+      type: object
+      x-tags:
+        - store
+      description: 店舗パンくず
+      properties:
+        elements:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+                description: １ぱんくずのテキスト
+              url:
+                type: string
+                description: 遷移先url
+    CancelFee:
+      title: CancelFee
+      type: object
+      x-tags:
+        - reservation
+      description: キャンセル料
+      properties:
+        beforeDay:
+          type: integer
+          description: 来店日x前まで
+        beforeTime:
+          type: integer
+          description: 来店時間x前まで
+        isAfter:
+          type: boolean
+          description: 来店後か否か
+        cancelFee:
+          type: string
+          description: キャンセル料
+        cancelFeeUnit:
+          type: string
+          description: 計上単位/(定率or定額(円))
+      required:
+        - cancelFee
+        - cancelFeeUnit
+    StoreBuffetMenu:
+      title: StoreBuffetMenu
+      type: object
+      description: レストランビュッフェメニュー
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        appCd:
+          type: string
+          description: 利用サービス
+        name:
+          type: string
+          description: メニュー名
+        description:
+          type: string
+          description: メニュー説明
+        plan:
+          type: string
+          description: メニュープラン
+        salesLunchStartTime:
+          type: string
+          description: 'ランチ販売開始時間(H:i),24時間制'
+          example: hh:mm:ss
+        salesDinnerStartTime:
+          type: string
+          description: 'ディナー販売開始時間(H:i),24時間制'
+          example: hh:mm:ss
+        providedDayOfWeek:
+          type: string
+          description: 提供可能日,月:1桁目、火:2桁目、水:3桁目、木:4桁目、金:5桁目、土:6桁目、日:7桁目、祝:8桁目（0:提供不可 1:提供可）
+          example: '01010110'
+        image:
+          $ref: '#/components/schemas/RestaurantMenuImage'
+        price:
+          type:  object
+          description: メニュー-価格
+          properties:
+            id:
+              type: integer
+            priceCd:
+              type: string
+              description: 価格コード
+              example: NORMAL
+            price:
+              type: integer
+              description: 価格
+            startDate:
+              type: string
+              description: 開始日付
+              example: yyyy-mm-dd
+            endDate:
+              type: string
+              description: 終了日付
+              example: yyyy-mm-dd
+          required:
+            - id
+            - priceCd
+            - price
+            - startDate
+            - endDate
+        shortestAvailableDate:
+          type:  object
+          description: 最短利用可能日
+          properties:
+            date:
+              type: string
+              description: 日付
+              example: yyyy-mm-dd
+            time:
+              type: string
+              description: 時間
+              example: hh:mm:ss
+            headcount:
+              type: integer
+              description: 人数
+              example: 1
+      required:
+        - id
+        - appCd
+        - name
+    BuffetStoreArea:
+      title: BuffetStoreArea
+      type: object
+      description: ビュッフェ店舗エリア
+      x-tags:
+        - store
+      properties:
+        bigAreaId:
+          type: integer
+          description: 大エリアID
+        bigAreaName:
+          type: string
+          description: 大エリア名
+        bigAreaAreaCd:
+          type: string
+          description: 大エリアコード
+        middleAreaId:
+          type: integer
+          description: 中エリアID
+        middleAreaName:
+          type: string
+          description: 中エリア名
+        middleAreaAreaCd:
+          type: string
+          description: 中エリアコード
+      required:
+        - bigAreaId
+        - bigAreaName
+        - bigAreaAreaCd
+        - middleAreaId
+        - middleAreaName
+        - middleAreaAreaCd
+    BuffetStoreImage:
+      title: BuffetStoreImage
+      type: object
+      description: ビュッフェ店舗画像
+      x-tags:
+        - store
+      properties:
+        id:
+          type: integer
+        imageCd:
+          type: string
+          description: 画像コード
+        imageUrl:
+          type: string
+          description: 画像URL
+      required:
+        - id
+        - imageCd
+        - imageUrl
+  securitySchemes: {}
